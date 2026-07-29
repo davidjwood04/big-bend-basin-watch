@@ -1,0 +1,28 @@
+name: ntfy Loudness Test
+
+# Manual-only. Sends a single priority-5 (max/urgent) ntfy push so you can
+# verify your iPhone alerts loudly through Sleep / Do Not Disturb. Does NOT
+# run on a schedule. Safe to keep for future tests or delete once verified.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  send-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send priority-5 ntfy test push
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          if [ -z "$NTFY_TOPIC" ]; then
+            echo "NTFY_TOPIC secret is empty — cannot send test."; exit 1
+          fi
+          curl -sS \
+            -H "Title: TEST - Chisos Basin loud alert" \
+            -H "Priority: 5" \
+            -H "Tags: rotating_light,warning" \
+            -H "Click: https://www.recreation.gov/camping/campgrounds/234038" \
+            -d "Loudness test at max priority. If you hear this through Sleep/DND, you are set." \
+            "https://ntfy.sh/${NTFY_TOPIC}" \
+            -w "\nHTTP %{http_code}\n"
