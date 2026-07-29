@@ -1,0 +1,43 @@
+name: Basin Campground Watch
+
+# Checks Chisos Basin Campground (Big Bend NP, recreation.gov facility ID 234038)
+# for new availability every 10 minutes and pushes an instant phone notification
+# via ntfy.sh the moment a site opens up, so you can book it manually before
+# anyone else does.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes, 24/7 (GitHub's practical minimum)
+  workflow_dispatch: {}       # lets you trigger a manual check from the Actions tab
+
+jobs:
+  check-availability:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore previous search state (avoids duplicate notifications)
+        uses: actions/cache@v4
+        with:
+          path: camply_campsites.json
+          key: camply-cache-${{ github.run_id }}
+          restore-keys: |
+            camply-cache-
+
+      - name: Install camply
+        run: pip install camply
+
+      - name: Search Chisos Basin Campground
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          RIDB_API_KEY: ${{ secrets.RIDB_API_KEY }}
+        run: |
+          camply campsites \
+            --provider RecreationDotGov \
+            --campground 234038 \
+            --start-date "$(date -u +%Y-%m-%d)" \
+            --end-date "$(date -u -d '+60 days' +%Y-%m-%d)" \
+            --nights 1 \
+            --notifications ntfy \
+            --notify-first-try \
+            --search-once \
+            --offline-search \
+            --offline-search-path camply_campsites.json
