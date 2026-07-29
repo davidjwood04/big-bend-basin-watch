@@ -42,3 +42,23 @@ jobs:
             --search-once \
             --offline-search \
             --offline-search-path camply_campsites.json
+
+      # >>> TEMPORARY TEST STEP — delete this whole step once you've confirmed
+      # notifications work. It watches the next 30 days (likely to have summer
+      # openings) purely to get real alerts flowing. Its cache is NOT persisted,
+      # so it will re-notify every run — expect repeat pushes until removed.
+      - name: (TEMP) Near-term test search to verify notifications
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          RIDB_API_KEY: ${{ secrets.RIDB_API_KEY }}
+        run: |
+          camply campsites \
+            --provider RecreationDotGov \
+            --campground 234038 \
+            --start-date "$(date -u +%Y-%m-%d)" \
+            --end-date "$(date -u -d '+30 days' +%Y-%m-%d)" \
+            --nights 1 \
+            --notifications ntfy \
+            --notify-first-try \
+            --search-once
+      # <<< END TEMPORARY TEST STEP
