@@ -4,7 +4,8 @@ name: Basin Campground Watch
 # for any individual night with check-in Oct 9-14, 2026 (end-date 10-15 = the
 # checkout for the night of the 14th). Runs every 5 minutes and pushes an instant
 # phone notification via ntfy.sh the moment a site opens up, so you can book it
-# manually before anyone else does.
+# manually before anyone else does. A second "near-term" search (next 3 days)
+# provides real test alerts as summer cancellations appear.
 
 on:
   schedule:
@@ -18,7 +19,9 @@ jobs:
       - name: Restore previous search state (avoids duplicate notifications)
         uses: actions/cache@v4
         with:
-          path: camply_campsites.json
+          path: |
+            camply_campsites.json
+            camply_nearterm.json
           key: camply-cache-${{ github.run_id }}
           restore-keys: |
             camply-cache-
@@ -42,3 +45,25 @@ jobs:
             --search-once \
             --offline-search \
             --offline-search-path camply_campsites.json
+
+      # Near-term "life-signal" / test search: watches the next 3 days so you get
+      # REAL alerts as summer cancellations pop up, without waiting on October.
+      # It uses its OWN persisted cache (camply_nearterm.json) and deliberately
+      # OMITS --notify-first-try, so the FIRST run records a silent baseline and
+      # only LATER runs notify — and only for NEWLY opened sites. That makes it a
+      # trickle, not the 954-per-run flood the old test step caused.
+      - name: Near-term search (next 3 days, new-only alerts)
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          RIDB_API_KEY: ${{ secrets.RIDB_API_KEY }}
+        run: |
+          camply campsites \
+            --provider RecreationDotGov \
+            --campground 234038 \
+            --start-date "$(date -u +%Y-%m-%d)" \
+            --end-date "$(date -u -d '+3 days' +%Y-%m-%d)" \
+            --nights 1 \
+            --notifications ntfy \
+            --search-once \
+            --offline-search \
+            --offline-search-path camply_nearterm.json
