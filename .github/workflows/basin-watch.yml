@@ -1,9 +1,10 @@
 name: Basin Campground Watch
 
 # Checks Chisos Basin Campground (Big Bend NP, recreation.gov facility ID 234038)
-# for new availability every 5 minutes and pushes an instant phone notification
-# via ntfy.sh the moment a site opens up, so you can book it manually before
-# anyone else does.
+# for any individual night with check-in Oct 9-14, 2026 (end-date 10-15 = the
+# checkout for the night of the 14th). Runs every 5 minutes and pushes an instant
+# phone notification via ntfy.sh the moment a site opens up, so you can book it
+# manually before anyone else does.
 
 on:
   schedule:
@@ -33,8 +34,8 @@ jobs:
           camply campsites \
             --provider RecreationDotGov \
             --campground 234038 \
-            --start-date "$(date -u +%Y-%m-%d)" \
-            --end-date "$(date -u -d '+60 days' +%Y-%m-%d)" \
+            --start-date "2026-10-09" \
+            --end-date "2026-10-15" \
             --nights 1 \
             --notifications ntfy \
             --notify-first-try \
